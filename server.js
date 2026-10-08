@@ -8,7 +8,7 @@ const { TikTokLiveConnection, WebcastEvent } = require('tiktok-live-connector');
 const { Game } = require('./lib/game');
 const { loadWords, LEVELS, DEFAULT_LEVEL } = require('./lib/words');
 
-// num = angka minimal `min` (0 / kosong -> pakai default); numz = angka apa saja termasuk 0
+// num = angka minimal `min` (0 / kosong -> pakai default); numz = angka apa saja termasuk 0.
 const num = (k, d, min) => Math.max(min, +process.env[k] || d);
 const numz = (k, d) => { const v = process.env[k]; return v === undefined || v === '' || isNaN(+v) ? d : +v; };
 
