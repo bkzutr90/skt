@@ -63,11 +63,31 @@ let autoMode = false, autoRounds = 0, spinning = false;
 const send = (ws, type, data) => ws.readyState === 1 && ws.send(JSON.stringify({ type, data }));
 const broadcast = (type, data) => wss.clients.forEach(ws => send(ws, type, data));
 const setStatus = p => { Object.assign(status, p); broadcast('status', status); };
-const sendState = () => broadcast('state', game.state());
+// Halaman jawaban (/answers.html): hanya dikirim ke koneksi yang berhak (ANSWERS_KEY)
+const history = []; // soal-soal sebelumnya (terbaru di depan), maksimal 10
+let curMeta = null; // { round, qNo } soal yang sedang berjalan
+const answerData = () => {
+  const q = game.q;
+  return {
+    round: game.round, qNo: game.qNo, total: TOTAL, level,
+    word: q?.word || '', clue: q?.clue || '', opened: q?.revealed.size || 0,
+    status: !q ? 'idle' : q.solved ? 'solved' : q.over ? 'over' : 'open',
+    by: q?.solved?.nick || '', via: q?.solved?.via || '', points: q?.solved?.points || 0,
+    history,
+  };
+};
+const sendState = () => {
+  broadcast('state', game.state());
+  const a = answerData();
+  wss.clients.forEach(ws => ws.canSeeAnswers && send(ws, 'answer', a));
+};
 const autoInfo = () => ({ on: autoMode, every: AUTO_EVERY, count: autoRounds });
 const broadcastAuto = () => broadcast('auto', autoInfo());
 
-wss.on('connection', ws => {
+wss.on('connection', (ws, req) => {
+  let key = ''; try { key = new URL(req.url, 'http://x').searchParams.get('key') || ''; } catch {}
+  ws.canSeeAnswers = !ANSWERS_KEY || key === ANSWERS_KEY;
+  if (ws.canSeeAnswers) send(ws, 'answer', answerData());
   send(ws, 'level', level); send(ws, 'auto', autoInfo()); send(ws, 'state', game.state()); send(ws, 'status', status);
   if (podium) send(ws, 'podium', podium); // widget OBS yang di-refresh tetap menampilkan podium
 });
@@ -81,7 +101,11 @@ function clearQ() {
 function startQuestion() {
   clearQ();
   if (frozen) return;
-  game.nextQuestion(); sendState();
+  if (game.q && curMeta) { // simpan soal sebelumnya ke riwayat
+    history.unshift({ ...curMeta, word: game.q.word, clue: game.q.clue, by: game.q.solved?.nick || '', via: game.q.solved?.via || '', over: game.q.over });
+    if (history.length > 10) history.pop();
+  }
+  game.nextQuestion(); curMeta = { round: game.round, qNo: game.qNo }; sendState();
   hintTimer = setInterval(() => {
     if (frozen) return;
     const h = game.hint();
@@ -300,7 +324,7 @@ app.post('/api/sim-gift', (req, res) => {
   handleGift({ id: nick, nick, avatar: '' }, gift, +diamonds, +count); res.json({ ok: true });
 });
 
-// Bantu moderator/testing: jawaban soal sekarang (pakai ?key=ANSWERS_KEY kalau diisi)
+// Versi JSON dari halaman /answers.html (pakai ?key=ANSWERS_KEY kalau diisi)
 app.get('/api/answer', (req, res) => {
   if (ANSWERS_KEY && req.query.key !== ANSWERS_KEY) return res.status(403).json({ ok: false });
   res.json({ answer: game.q?.word || null, clue: game.q?.clue || null });
@@ -310,7 +334,7 @@ app.get('/api/answer', (req, res) => {
   game.setWords(await loadWords(level), level);
   startQuestion();
   server.listen(PORT, () => {
-    console.log(`Dashboard   : http://localhost:${PORT}\nGame (OBS)  : http://localhost:${PORT}/?overlay=1\nSuara (OBS) : http://localhost:${PORT}/tts.html`);
+    console.log(`Dashboard   : http://localhost:${PORT}\nGame (OBS)  : http://localhost:${PORT}/?overlay=1\nSuara (OBS) : http://localhost:${PORT}/tts.html\nJawaban     : http://localhost:${PORT}/answers.html${ANSWERS_KEY ? '?key=' + ANSWERS_KEY : ''}`);
     if (process.env.TIKTOK_USERNAME) connect(process.env.TIKTOK_USERNAME);
   });
 })();
