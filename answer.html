@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Susun Kata — Kunci Jawaban</title>
+<style>
+:root{--bg:#0b0b10;--card:#17171f;--mut:#8b8b9a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Arial,sans-serif;display:flex;justify-content:center;padding:16px}
+#w{width:min(520px,100%);display:flex;flex-direction:column;gap:12px}
+h1{margin:0;text-align:center;font-size:15px;letter-spacing:3px;color:var(--mut)}
+#warn{text-align:center;font-size:11px;color:#ff8ac0}
+#meta{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--mut)}
+#meta b{color:#ffd93b}
+#card{background:var(--card);border-radius:16px;padding:22px 14px;text-align:center;border:3px solid #4aa8ff}
+#card.solved{border-color:#2ee66b}#card.over{border-color:#ff4d6d}
+#clue{font-size:13px;font-weight:800;letter-spacing:2px;color:#7ee8ff}
+#word{font-size:clamp(28px,9vw,52px);font-weight:900;letter-spacing:6px;margin:10px 0;word-break:break-all;color:#ffd93b}
+#status{font-size:14px;font-weight:800;min-height:20px}
+#msg{text-align:center;font-size:13px;color:#ff6b6b;min-height:16px}
+h2{margin:6px 0 0;font-size:11px;letter-spacing:3px;color:var(--mut);text-align:center}
+#hist{display:flex;flex-direction:column;gap:5px}
+.h{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;background:var(--card);font-size:13px}
+.h .n{width:38px;color:var(--mut);font-size:11px;font-weight:700}
+.h .w{font-weight:900;letter-spacing:2px;color:#ffd93b;flex:1}
+.h .b{font-size:12px;font-weight:700;color:#c9c9d6;text-align:right;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style></head>
+<body><div id="w">
+  <h1>🔑 KUNCI JAWABAN</h1>
+  <div id="warn">Halaman ini untuk kamu / moderator. Jangan dimasukkan ke OBS.</div>
+  <div id="meta"><span id="rd">RONDE -</span><span id="qn">SOAL -</span><span id="lv"></span></div>
+  <div id="card"><div id="clue">MENUNGGU SOAL...</div><div id="word">—</div><div id="status"></div></div>
+  <div id="msg"></div>
+  <h2>SOAL SEBELUMNYA</h2>
+  <div id="hist"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const key=new URLSearchParams(location.search).get('key')||'';
+const LV={mudah:'🟢 MUDAH',sedang:'🟠 SEDANG',sulit:'🔴 SULIT'};
+let gotAnswer=false,noAnsT=null;
+
+function render(a){
+  gotAnswer=true;$('msg').textContent='';
+  $('rd').innerHTML=`RONDE <b>${a.round}</b>`;
+  $('qn').innerHTML=`SOAL <b>${a.qNo}/${a.total}</b>`;
+  $('lv').textContent=LV[a.level]||'';
+  $('clue').textContent=a.clue?'PETUNJUK: '+a.clue.toUpperCase():'MENUNGGU SOAL...';
+  $('word').textContent=a.word||'—';
+  const c=$('card'),st=$('status');
+  c.className=a.status==='solved'?'solved':a.status==='over'?'over':'';
+  if(a.status==='solved'){st.style.color='#2ee66b';st.textContent=`${a.via==='gift'?'🎁':'✅'} ${a.by} menjawab benar (+${a.points})`;}
+  else if(a.status==='over'){st.style.color='#ff6b6b';st.textContent='⏰ Waktu habis, tidak ada yang menjawab';}
+  else if(a.status==='open'){st.style.color='#8b8b9a';st.textContent=a.opened>0?`Belum dijawab · ${a.opened} huruf hint terbuka`:'Belum dijawab';}
+  else st.textContent='';
+  $('hist').innerHTML=a.history.length?a.history.map(h=>`<div class="h"><span class="n">${h.round}.${h.qNo}</span><span class="w">${esc(h.word)}</span><span class="b">${h.by?(h.via==='gift'?'🎁 ':'✅ ')+esc(h.by):(h.over?'⏰ habis':'⏭ dilewati')}</span></div>`).join(''):'<div class="h"><span class="n"></span><span class="w" style="color:#8b8b9a;font-weight:600;letter-spacing:0">Belum ada.</span></div>';
+}
+function connectWS(){
+  const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws?key='+encodeURIComponent(key));
+  gotAnswer=false;clearTimeout(noAnsT);
+  // tidak ada data jawaban = kunci salah / belum diisi
+  noAnsT=setTimeout(()=>{if(!gotAnswer)$('msg').textContent='🔒 Akses ditolak. Buka halaman ini dengan /answers.html?key=ISI_ANSWERS_KEY';},2500);
+  ws.onmessage=e=>{const{type,data}=JSON.parse(e.data);if(type==='answer')render(data);};
+  ws.onclose=()=>setTimeout(connectWS,2000);
+}
+connectWS();
+</script></body></html>
