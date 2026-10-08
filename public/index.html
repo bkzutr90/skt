@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Susun Kata — TikTok Live</title>
+<style>
+:root{--bg:#0b0b10;--card:#17171f;--tx:#fff;--mut:#8b8b9a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,Segoe UI,Arial,sans-serif}
+#app{display:flex;gap:16px;justify-content:center;align-items:flex-start;padding:16px}
+#ctl{width:260px;background:var(--card);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;position:sticky;top:16px}
+#ctl h2{margin:0 0 4px;font-size:16px}#ctl input,#ctl button,#ctl select{padding:9px 10px;border-radius:8px;border:0;font:inherit}
+#ctl input[type=text],#ctl input:not([type]),#ctl input[type=number]{background:#0b0b10;color:#fff;border:1px solid #2a2a36}
+#ctl button{background:#fe2c55;color:#fff;font-weight:700;cursor:pointer}
+#ctl button.g{background:#2a2a36}#ctl select{background:#2a2a36;color:#fff}#st{font-size:13px;color:var(--mut)}#st b{color:#2ee66b}
+#stage{width:min(560px,100vw - 8px);min-height:640px;display:flex;flex-direction:column;gap:10px;position:relative;padding-bottom:8px}
+h1{margin:2px 0 0;text-align:center;font-size:20px;letter-spacing:1px;text-shadow:0 2px 6px #000}h1 span{color:#ffd93b}
+#clue{align-self:center;padding:7px 22px;border-radius:999px;background:#17171f;border:2px solid #4aa8ff;color:#7ee8ff;font-weight:800;font-size:15px;letter-spacing:2px}
+#timer{position:relative;height:22px;border-radius:11px;background:#1d1d27;overflow:hidden}
+#tbar{height:100%;width:100%;background:linear-gradient(90deg,#ff4d6d,#ffd93b,#2ee66b);border-radius:11px}
+#tnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;text-shadow:0 1px 4px #000}
+#hint{margin:0;text-align:center;font-size:12px;font-weight:700;color:#ff8ac0;min-height:16px}
+#auto{margin:0;text-align:center;font-size:11px;font-weight:700;color:#7ee8ff;display:none}
+#tiles,#slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.tile{width:var(--z,56px);height:var(--z,56px);display:flex;align-items:center;justify-content:center;border-radius:10px;background:linear-gradient(#ffe27a,#ffb82e);color:#2a1a00;font-weight:900;font-size:calc(var(--z,56px)*.55);box-shadow:0 5px 0 #b57a00,0 8px 14px #0008;animation:pop .4s backwards}
+#tiles.dim .tile{opacity:.3;animation:none}
+.slot{width:var(--z,44px);height:var(--z,44px);display:flex;align-items:center;justify-content:center;border-radius:8px;background:#14141c;border-bottom:4px solid #4a4a5c;font-weight:900;font-size:calc(var(--z,44px)*.58);color:#f2f2f2}
+.slot.on{border-bottom-color:#ffd93b;color:#ffd93b}
+.slot.end{background:var(--wc);color:#111;border-bottom-color:transparent}
+.slot.wave{animation:wave .8s cubic-bezier(.25,.8,.3,1) both;animation-delay:calc(var(--i)*70ms)}
+@keyframes wave{0%{transform:none;background:#14141c;color:#f2f2f2}35%{transform:translateY(-14px) scale(1.35);background:var(--wc);color:#111;box-shadow:0 0 16px 5px var(--wc)}68%{transform:translateY(3px) scale(.94);background:var(--wc);color:#111}100%{transform:none;background:var(--wc);color:#111;box-shadow:none}}
+#res{min-height:46px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:18px;font-weight:800;text-shadow:0 2px 8px #000;text-align:center}
+#res img{width:34px;height:34px;border-radius:50%;object-fit:cover}
+#lb{display:flex;flex-direction:column;gap:5px}
+#lb .t{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--mut);text-align:center}
+.lr{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:10px;background:#0009;font-size:13px;font-weight:700}
+.lr .n{width:18px;color:var(--mut)}.lr img,.lr .ph{width:24px;height:24px;border-radius:50%;object-fit:cover;background:#333;flex:none}
+.lr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lr .pt{color:#ffd93b}
+.lr.r1{border:1px solid #f5c542}.lr.r2{border:1px solid #cfd3da}.lr.r3{border:1px solid #d58a52}
+#diff{align-self:center;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:240px;padding:10px 26px;border-radius:14px;background:#17171f;border:3px solid var(--dc,#2ee66b);box-shadow:0 0 18px -4px var(--dc,#2ee66b);text-align:center;transition:border-color .3s,box-shadow .3s}
+#diff small{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--mut)}
+#diff b{font-size:24px;font-weight:900;letter-spacing:2px;color:var(--dc,#2ee66b);text-shadow:0 2px 8px #000}
+#diff i{font-style:normal;font-size:11px;font-weight:700;letter-spacing:1px;color:#c9c9d6}
+#diff.pop{animation:pop .5s}
+/* countdown end live */
+#cd{position:absolute;inset:0;display:none;flex-direction:column;gap:4px;text-align:center;align-items:center;justify-content:center;background:#000c;border-radius:8px;z-index:6}
+#cd small{font-size:16px;font-weight:800;letter-spacing:1.5px;color:#ff8ac0}
+#cd b{font-size:120px;line-height:1;color:#fff;text-shadow:0 4px 24px #fe2c55}
+/* spin mode otomatis */
+#spin{position:absolute;inset:0;display:none;flex-direction:column;gap:18px;text-align:center;align-items:center;justify-content:center;background:#000d;border-radius:8px;z-index:7}
+#spin h2{margin:0;font-size:24px;letter-spacing:3px;color:#ffd93b;text-shadow:0 2px 10px #000}
+#spin .sub{margin:0;font-size:12px;font-weight:700;letter-spacing:2px;color:#7ee8ff}
+#stiles{display:flex;gap:10px;width:94%}
+.st{flex:1;display:flex;flex-direction:column;gap:4px;align-items:center;padding:16px 4px;border-radius:12px;background:#1d1d27;border:3px solid #2c2c37;opacity:.4;transition:all .08s}
+.st span{font-size:34px}.st b{font-size:18px}.st small{font-size:10px;color:var(--mut)}
+.st.on{opacity:1;border-color:var(--tc);background:#2a2a36;transform:scale(1.08);box-shadow:0 0 22px var(--tc)}
+.st.win{animation:pop .5s}
+#sres{font-size:34px;font-weight:900;min-height:42px;text-shadow:0 3px 12px #000}
+/* podium */
+#pod{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px 12px;z-index:10;border-radius:12px;background:radial-gradient(ellipse at 50% 28%,#2b2b34 0%,#121217 55%,#08080b 100%)}
+#pod h2{margin:0;font-size:22px;letter-spacing:3px;color:#ffd93b;text-shadow:0 2px 10px #000;text-align:center}
+#pod .thx{margin:0;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--mut)}
+#prows{width:100%;display:flex;flex-direction:column;gap:6px}
+.pr{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:linear-gradient(#23232c,#0d0d12);border:1px solid #2c2c37;border-left:5px solid var(--rc,#555);animation:pop .5s backwards}
+.pr .rk{width:26px;font-size:18px;font-weight:900;color:var(--rc,#a9afbb);text-align:center}
+.pr img,.pr .ph{width:var(--av,32px);height:var(--av,32px);border-radius:50%;object-fit:cover;border:2px solid var(--rc,#555);background:#333;flex:none}
+.pr .pn{flex:1;min-width:0;font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr .pp{font-weight:800;color:var(--rc,#a9afbb);font-size:14px}
+.pr.p1{--av:46px;padding:12px;font-size:16px}.pr.p2,.pr.p3{--av:38px;padding:10px 12px}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+@keyframes ping{50%{transform:scale(1.25)}}
+body.ov{background:transparent}body.ov #ctl{display:none}
+@media(max-width:880px){#app{flex-direction:column;align-items:center}#ctl{position:static;width:min(560px,100%)}}
+</style></head>
+<body><div id="app">
+<aside id="ctl">
+  <h2>🔤 Susun Kata — Live Control</h2>
+  <input id="u" placeholder="@username TikTok (harus sedang LIVE)">
+  <button id="bc">Hubungkan</button><button id="bd" class="g">Putus</button>
+  <select id="lv">
+    <option value="mudah">Tingkat: Mudah (4-5 huruf)</option>
+    <option value="sedang">Tingkat: Sedang (6-7 huruf)</option>
+    <option value="sulit">Tingkat: Sulit (8+ huruf)</option>
+  </select>
+  <button id="ba" class="g">🎲 Mode otomatis: MATI</button>
+  <button id="bk" class="g">⏭ Lewati soal</button>
+  <button id="bs">🏁 Skor Akhir</button>
+  <button id="bn" class="g">Ronde baru</button><button id="br" class="g">Reset skor</button>
+  <hr style="border-color:#2a2a36;width:100%">
+  <input id="es" type="number" min="1" max="60" value="10" title="Detik countdown" placeholder="Detik countdown">
+  <button id="be">🔴 End Live (countdown + podium)</button>
+  <button id="bx" class="g">Batal End Live / lanjut main</button>
+  <div id="st">Status: idle</div>
+  <hr style="border-color:#2a2a36;width:100%">
+  <input id="sn" placeholder="Nama tester"><input id="sx" placeholder="Ketik jawaban lalu Enter"><button id="sg" class="g">🎁 Simulasi gift</button>
+  <label style="font-size:13px"><input type="checkbox" id="fx" checked> 🔔 Efek suara</label>
+  <label style="font-size:12px;color:var(--mut)">Volume efek <input type="range" id="fv" min="0" max="1" step="0.05" value="0.7" style="width:100%"></label>
+  <label style="font-size:13px"><input type="checkbox" id="tt"> 🔊 Bacakan komentar (TTS)</label>
+  <label style="font-size:13px"><input type="checkbox" id="tn"> Sebut nama penonton</label>
+  <label style="font-size:12px;color:var(--mut)">Volume TTS <input type="range" id="tv" min="0" max="1" step="0.05" value="1" style="width:100%"></label>
+  <div style="font-size:12px;color:var(--mut);line-height:1.6">Widget OBS (Browser Source):<br>Game: <code>/?overlay=1</code> (560×1000)<br>Opsi: <code>&amp;sfx=0</code> (tanpa efek suara)<br>Suara: <code>/tts.html</code> (centang "Kontrol audio via OBS")<br>Jawaban (moderator): <code>/api/answer</code></div>
+</aside>
+<main id="stage">
+  <h1>SUSUN KATA <span id="cnt">0/10</span></h1>
+  <div id="clue">PETUNJUK: —</div>
+  <div id="timer"><div id="tbar"></div><span id="tnum"></span></div>
+  <p id="hint"></p>
+  <p id="auto"></p>
+  <div id="tiles"></div>
+  <div id="slots"></div>
+  <div id="res"></div>
+  <div id="lb"></div>
+  <div id="diff"><small>TINGKAT KESULITAN</small><b id="dfn">🟢 MUDAH</b><i id="dfd">KATA PENDEK</i></div>
+  <div id="cd"><small>LIVE BERAKHIR DALAM</small><b id="cdn">10</b></div>
+  <div id="spin"><h2>🎲 GANTI TINGKAT!</h2><p class="sub">TINGKAT DIPUTAR ACAK</p><div id="stiles"></div><div id="sres"></div></div>
+  <div id="pod"><h2 id="pt">🏆 PERINGKAT AKHIR</h2><div id="prows"></div><p class="thx" id="pnext" style="color:#ff8ac0;font-size:13px"></p><p class="thx" id="pthx">TERIMA KASIH SUDAH BERMAIN</p></div>
+</main></div>
+<script src="/tts.js"></script>
+<script src="/sfx.js"></script>
+<script>
+const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),ov=Q.has('overlay');
+if(ov)document.body.classList.add('ov');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const post=(p,b)=>fetch('/api/'+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+if(ov){SFX.enable(Q.get('sfx')!=='0');}
+
+// ---- tingkat kesulitan (kotak di bawah papan) ----
+const LV={
+  mudah:{e:'🟢',n:'MUDAH',c:'#2ee66b',d:'KATA PENDEK (4-5 HURUF)',s:'4-5 HURUF'},
+  sedang:{e:'🟠',n:'SEDANG',c:'#ff8a1f',d:'KATA SEDANG (6-7 HURUF)',s:'6-7 HURUF'},
+  sulit:{e:'🔴',n:'SULIT',c:'#ff4d6d',d:'KATA PANJANG (8+ HURUF)',s:'8+ HURUF'},
+};
+const SPORD=['mudah','sedang','sulit'];
+let lvl=null,autoS={on:false,every:5,count:0},spinT=null;
+function renderLevel(l){
+  const m=LV[l]||LV.mudah,d=$('diff');
+  d.style.setProperty('--dc',m.c);$('dfn').textContent=`${m.e} ${m.n}`;$('dfd').textContent=m.d;
+  if(lvl!==null&&lvl!==l){d.classList.remove('pop');void d.offsetWidth;d.classList.add('pop');} // animasi saat tingkat berganti
+  lvl=l;$('lv').value=l;
+}
+
+// ---- mode otomatis: info di layar + spin acak ----
+function renderAuto(){
+  const b=$('ba'),a=$('auto');
+  b.textContent=autoS.on?'🎲 Mode otomatis: AKTIF':'🎲 Mode otomatis: MATI';
+  b.style.background=autoS.on?'#1fa855':'';
+  a.style.display=autoS.on?'block':'none';
+  a.textContent=`🎲 ACAK TINGKAT TIAP ${autoS.every} RONDE (${autoS.count}/${autoS.every})`;
+}
+function hideSpin(){clearTimeout(spinT);spinT=null;$('spin').style.display='none';}
+function startSpin(d){
+  cancelRoundPod(true);hideSpin();
+  const N=22,ri=SPORD.indexOf(d.result);
+  const k=Math.max(.3,((d.seconds||6)*1000-1800)/3640); // skala supaya animasi muat di durasi spin
+  $('stiles').innerHTML=SPORD.map(m=>`<div class="st" id="st_${m}" style="--tc:${LV[m].c}"><span>${LV[m].e}</span><b>${LV[m].n}</b><small>${LV[m].s}</small></div>`).join('');
+  $('sres').textContent='';$('sres').style.color='';
+  $('spin').style.display='flex';
+  let i=0;
+  const step=()=>{
+    SPORD.forEach(m=>$('st_'+m).classList.remove('on'));
+    const m=SPORD[(ri+i)%3];
+    $('st_'+m).classList.add('on');SFX.tick();
+    if(i===N-1){ // berhenti di hasil
+      $('st_'+m).classList.add('win');
+      $('sres').textContent=`TINGKAT ${LV[m].n}!`;$('sres').style.color=LV[m].c;
+      SFX.done();return;
+    }
+    i++;spinT=setTimeout(step,(60+i*i*.7)*k); // makin lama makin pelan
+  };
+  step();
+}
+
+// ---- papan ----
+let curKey='',wavedKey='',dl=0,limit=40000,ended=true;
+function sizeTiles(){
+  const n=$('tiles').children.length||1,w=$('stage').clientWidth||560;
+  const z=Math.max(26,Math.min(64,Math.floor((w-(n-1)*6)/n)));
+  $('tiles').style.setProperty('--z',z+'px');$('slots').style.setProperty('--z',Math.max(24,Math.min(48,z-6))+'px');
+}
+function render(s){
+  if(s.idle)return;
+  const key=s.round+':'+s.qNo+':'+s.letters.join('');
+  if(key!==curKey){
+    curKey=key;cancelRoundPod(true);hideSpin();
+    $('tiles').innerHTML=s.letters.map((ch,i)=>`<div class="tile" style="animation-delay:${i*50}ms">${esc(ch)}</div>`).join('');
+  }
+  $('cnt').textContent=`${s.qNo}/${s.total}`;
+  $('clue').textContent='PETUNJUK: '+String(s.clue).toUpperCase();
+  limit=s.limit;ended=!!(s.solved||s.over);dl=performance.now()+s.left;
+  const col=s.solved?s.solved.color:'#ff4d6d',wave=ended&&wavedKey!==key;
+  if(wave)wavedKey=key;
+  $('slots').innerHTML=s.pattern.map((ch,i)=>`<div class="slot${ch?' on':''}${ended?' end':''}${wave?' wave':''}" style="--wc:${col};--i:${i}">${esc(ch)}</div>`).join('');
+  $('tiles').classList.toggle('dim',ended);
+  sizeTiles();
+  if(s.solved){const u=s.solved;$('res').style.color=u.color;$('res').innerHTML=`${u.avatar?`<img src="${esc(u.avatar)}">`:''}<span>${u.via==='gift'?'🎁':'✅'} <b>${esc(u.nick)}</b> BENAR +${u.points}</span>`;}
+  else if(s.over){$('res').style.color='#ff6b6b';$('res').innerHTML=`<span>⏰ WAKTU HABIS · JAWABAN: <b>${esc(s.answer)}</b></span>`;}
+  else $('res').innerHTML='';
+  $('hint').textContent=ended?'':(s.opened>0?`💡 HINT: ${s.opened} HURUF DIBUKA`:'KETIK JAWABANNYA DI KOMENTAR');
+  $('lb').innerHTML=s.top.length?`<div class="t">PERINGKAT</div>`+s.top.slice(0,5).map((p,i)=>`<div class="lr r${i+1}"><span class="n">${i+1}</span>${p.avatar?`<img src="${esc(p.avatar)}">`:'<div class="ph"></div>'}<span class="nm">${esc(p.nick)}</span><span class="pt">${p.points}</span></div>`).join(''):'';
+}
+function loop(){
+  const left=ended?0:Math.max(0,dl-performance.now());
+  $('tbar').style.width=(left/limit*100)+'%';
+  $('tnum').textContent=ended?'':Math.ceil(left/1000);
+  requestAnimationFrame(loop);
+}
+addEventListener('resize',sizeTiles);requestAnimationFrame(loop);
+
+// ---- end live: countdown + podium ----
+let cdT=null;
+function hidePodium(){$('pod').style.display='none';}
+function cancelEndUI(){cancelRoundPod(false);clearInterval(cdT);cdT=null;$('cd').style.display='none';hidePodium();}
+function startCountdown(sec){
+  cancelEndUI();let n=sec;$('cdn').textContent=n;$('cd').style.display='flex';
+  cdT=setInterval(()=>{n--;$('cdn').textContent=Math.max(n,0);if(n<=0){clearInterval(cdT);cdT=null;}},1000);
+}
+const PCOL={1:'#f5c542',2:'#cfd3da',3:'#d58a52'};
+function showPodium(players,mode){
+  clearInterval(cdT);cdT=null;$('cd').style.display='none';
+  const rd=mode==='round',sc=mode==='score';
+  $('pt').textContent=rd?'🏆 PERINGKAT SEMENTARA':sc?'🏆 SKOR AKHIR':'🏆 PERINGKAT AKHIR';
+  $('pthx').style.display=(rd||sc)?'none':'';
+  if(!rd){cancelRoundPod(false);roundPod=false;$('pnext').textContent='';}
+  $('prows').innerHTML=players.slice(0,10).map((p,i)=>`<div class="pr p${i+1}" style="--rc:${PCOL[i+1]||'#a9afbb'};animation-delay:${i*70}ms"><span class="rk">${i+1}</span>${p.avatar?`<img src="${esc(p.avatar)}">`:'<div class="ph"></div>'}<span class="pn">${esc(p.nick)}</span><span class="pp">${esc(p.points)} poin</span></div>`).join('')||'<div class="thx">BELUM ADA SKOR</div>';
+  $('pod').style.display='flex';
+}
+// podium sementara di akhir ronde
+let roundPod=false,rpT=null,rpI=null;
+function cancelRoundPod(hide){
+  clearTimeout(rpT);clearInterval(rpI);rpT=rpI=null;
+  if(roundPod&&hide)hidePodium();
+  roundPod=false;$('pnext').textContent='';
+}
+function startRoundPodium(players,sec,spin){
+  cancelRoundPod(false);
+  if($('pod').style.display==='flex')return; // podium akhir live sedang tampil
+  const delay=Math.min(3000,sec*300); // beri waktu hasil soal terakhir terlihat dulu
+  rpT=setTimeout(()=>{
+    roundPod=true;let n=Math.max(1,Math.round(sec-delay/1000));
+    showPodium(players,'round');
+    const t=()=>{$('pnext').textContent=n>0?`${spin?'PUTAR TINGKAT':'RONDE BARU'} DALAM ${n}`:'';};t();
+    rpI=setInterval(()=>{n--;t();if(n<=0)clearInterval(rpI);},1000);
+  },delay);
+}
+
+// ---- websocket ----
+function connectWS(){
+  const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+  ws.onmessage=e=>{const{type,data}=JSON.parse(e.data);
+    if(type==='state')render(data);
+    if(type==='level')renderLevel(data);
+    if(type==='auto'){autoS=data;renderAuto();}
+    if(type==='spin')startSpin(data);
+    if(type==='solved')data.user.via==='gift'?SFX.gift():SFX.correct();
+    if(type==='timeout')SFX.timeout();
+    if(type==='hint')SFX.hint();
+    if(type==='chat'){if(!ov)TTS.say(data.user.nick,data.text);}
+    if(type==='roundend'){SFX.done();startRoundPodium(data.players||[],data.seconds||10,!!data.spin);}
+    if(type==='endlive')startCountdown(data.seconds||10);
+    if(type==='endlive_cancel')cancelEndUI();
+    if(type==='podium')showPodium(data.players||[],data.kind);
+    if(type==='status'){$('st').innerHTML=`Status: <b>${data.state}</b>${data.username?' @'+esc(data.username):''}<br>👁 ${data.viewers||0} · ❤ ${data.likes||0}${data.error?'<br>⚠ '+esc(data.error):''}`;}
+  };
+  ws.onclose=()=>setTimeout(connectWS,2000);
+}
+renderLevel('mudah');renderAuto();connectWS();
+
+// ---- kontrol dashboard ----
+$('bc').onclick=()=>post('connect',{username:$('u').value});
+$('bd').onclick=()=>post('disconnect');
+$('lv').onchange=e=>post('difficulty',{level:e.target.value});
+// Mode otomatis: toggle; tiap N ronde selesai, tingkat diacak lewat spin yang tampil di layar
+$('ba').onclick=()=>post('auto',{on:!autoS.on});
+$('bk').onclick=()=>post('skip');
+$('bn').onclick=()=>post('new-round');
+$('br').onclick=()=>post('reset-scores');
+$('bs').onclick=()=>post('final-score');
+$('be').onclick=()=>post('end-live',{seconds:+$('es').value||10});
+$('bx').onclick=()=>post('end-live/cancel');
+$('fx').onchange=e=>SFX.enable(e.target.checked);
+$('fv').oninput=e=>SFX.setVolume(+e.target.value);
+$('tt').onchange=e=>TTS.enable(e.target.checked);
+$('tn').onchange=e=>TTS.readNick(e.target.checked);
+$('tv').oninput=e=>TTS.setVolume(+e.target.value);
+$('sg').onclick=()=>post('sim-gift',{nick:$('sn').value||'tester',gift:'Rose',diamonds:1,count:1});
+$('sx').onkeydown=e=>{if(e.key==='Enter'&&e.target.value){post('sim',{nick:$('sn').value||'tester',text:e.target.value});e.target.value='';}};
+addEventListener('pointerdown',()=>SFX.unlock(),{once:true});addEventListener('keydown',()=>SFX.unlock(),{once:true});
+</script></body></html>

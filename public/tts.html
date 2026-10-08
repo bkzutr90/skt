@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<title>Susun Kata — Suara (TTS)</title>
+<style>body{margin:0;background:transparent;color:#8b8b9a;font:12px system-ui,Arial,sans-serif;padding:8px}</style>
+</head><body>
+🔊 Suara TTS aktif. Pakai sebagai Browser Source di OBS (centang "Kontrol audio via OBS").<br>
+Opsi: <code>?nick=1</code> (sebut nama penonton), <code>?vol=0.8</code> (volume), <code>?tts=0</code> (matikan).
+<script src="/tts.js"></script>
+<script>
+const Q = new URLSearchParams(location.search);
+TTS.enable(Q.get('tts') !== '0');
+TTS.readNick(Q.get('nick') === '1');
+if (Q.has('vol')) TTS.setVolume(+Q.get('vol'));
+function conn() {
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+  ws.onmessage = e => { const { type, data } = JSON.parse(e.data); if (type === 'chat') TTS.say(data.user.nick, data.text); };
+  ws.onclose = () => setTimeout(conn, 2000);
+}
+conn();
+</script></body></html>
